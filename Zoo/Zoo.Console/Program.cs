@@ -1,181 +1,102 @@
-﻿using Zoo.Common.Extensions;
-using Zoo.Common.Models;
-using Zoo.Common.Services;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
+using System.Collections.Concurrent;
+using Zoo.Common;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 Console.WriteLine("==============================================");
-Console.WriteLine("              ZOO MANAGEMENT SYSTEM");
+Console.WriteLine("    ДЕМОНСТРАЦІЯ АСИНХРОННОГО CRUD ДЛЯ ЗООПАРКУ");
 Console.WriteLine("==============================================");
-// Створення CRUD сервісу
-var mammalService = new CrudService<Mammal>();
-mammalService.OperationPerformed += OnOperationPerformed; // Делегат та подія
-// Створення об'єктів
-var lion = new Mammal(
-    "Сімба",
-    "Африканський лев",
-    5,
-    "Золотистий",
-    "Хижак",
-    190
-);
 
-var tiger = new Mammal(
-    "Річі",
-    "Бенгальський тигр",
-    7,
-    "Помаранчевий з чорними смугами",
-    "Хижак",
-    210
-);
-
-
-// CREATE
-Console.WriteLine("--- CREATE ---");
-
-mammalService.Create(lion);
-mammalService.Create(tiger);
-
-
-// READ ALL
-Console.WriteLine("\n--- READ ALL ---");
-
-foreach (var animal in mammalService.ReadAll())
+// Асинхронний CRUD сервіс (багатопотоково-безпечний)
+var mammalService = new CrudServiceAsync<Mammal>
 {
-    Console.WriteLine(animal);
+    FilePath = "mammals_async.json"
+};
+
+mammalService.OperationPerformed += OnOperationPerformed;
+
+// Паралельне створення за допомогою Parallel.ForEachAsync
+const int totalToCreate = 5000;
+Console.WriteLine($"Створюємо {totalToCreate} ссавців паралельно...");
+
+// Використання lock для локального лічильника
+var createdCount = 0;
+var counterLock = new object();
+
+await Parallel.ForEachAsync(
+    Enumerable.Range(0, totalToCreate),
+    new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+    async (i, ct) =>
+    {
+        // Генерація об'єкта
+        var m = Mammal.CreateNew();
+
+        // Додавання в сервіс
+        await mammalService.CreateAsync(m);
+
+        // Оновлення локального лічильника під lock
+        lock (counterLock)
+        {
+            createdCount++;
+        }
+    }
+);
+
+Console.WriteLine($"Створено (за лічильником): {createdCount}");
+
+// Зчитати всі та обчислити статистику
+var all = (await mammalService.ReadAllAsync()).ToList();
+
+var minAge = all.Min(a => a.Age);
+var maxAge = all.Max(a => a.Age);
+var avgWeight = all.Average(a => a.Weight);
+
+Console.WriteLine($"Мін. вік: {minAge}, Макс. вік: {maxAge}, Середня вага: {avgWeight:F2} кг");
+
+// Демонстрація пагінації (наприклад: сторінка 1, 5 елементів)
+Console.WriteLine("\n--- Демонстрація пагінації (Сторінка 1, Кількість 5) ---");
+var pagedList = await mammalService.ReadAllAsync(page: 1, amount: 5);
+foreach (var mammal in pagedList)
+{
+    Console.WriteLine(mammal);
 }
 
+// Демонстрація SemaphoreSlim для обмеження паралельних операцій
+using var sem = new SemaphoreSlim(3);
+var bag = new ConcurrentBag<string>();
 
-// READ
-Console.WriteLine("\n--- READ ---");
-
-var foundAnimal = mammalService.Read(lion.Id);
-
-if (foundAnimal != null)
+var tasks = all.Take(20).Select(async a =>
 {
-    Console.WriteLine("Знайдено:");
-    Console.WriteLine(foundAnimal);
-}
+    await sem.WaitAsync();
+    try
+    {
+        await Task.Delay(10);
+        bag.Add(a.Name);
+    }
+    finally
+    {
+        sem.Release();
+    }
+});
 
+await Task.WhenAll(tasks);
+Console.WriteLine($"Зібрано імен: {bag.Count} (SemaphoreSlim).");
 
-// UPDATE
-Console.WriteLine("\n--- UPDATE ---");
+// Демонстрація AutoResetEvent для сигналізації про завершення збереження
+using var autoEvent = new AutoResetEvent(false);
+var saveTask = mammalService.SaveAsync();
+saveTask.ContinueWith(t => autoEvent.Set());
 
-lion.Age = 6;
-lion.Weight = 195;
+Console.WriteLine("Очікування завершення асинхронного збереження...");
+autoEvent.WaitOne();
+Console.WriteLine("Збереження завершено.");
 
-mammalService.Update(lion);
-
-Console.WriteLine("Після оновлення:");
-Console.WriteLine(mammalService.Read(lion.Id));
-
-
-// Метод та подія класу Animal
-Console.WriteLine("\n--- МЕТОД ТА ПОДІЯ ANIMAL ---");
-
-lion.StatusChanged += OnAnimalStatusChanged;
-
-lion.UpdateAge(7);
-
-
-// Статичний метод
-Console.WriteLine("\n--- STATIC ---");
-
-Console.WriteLine(
-    $"Кількість створених тварин: {Animal.GetTotalAnimalsCount()}"
-);
-
-
-// Метод розширення
-Console.WriteLine("\n--- EXTENSION METHOD ---");
-
-Console.WriteLine(lion.GetShortInfo());
-
-
-// Робота Bird
-Console.WriteLine("\n--- BIRD ---");
-
-var eagle = new Bird(
-    "Орлик",
-    "Беркут",
-    4,
-    2.2,
-    true,
-    "Темно-коричневий"
-);
-
-Console.WriteLine(eagle);
-
-eagle.Fly();
-
-Console.WriteLine(
-    $"Коротка інформація: {eagle.GetShortInfo()}"
-);
-
-
-// Робота Enclosure
-Console.WriteLine("\n--- ENCLOSURE ---");
-
-var enclosure = new Enclosure(
-    "Вольєр №1",
-    120,
-    3
-);
-
-Console.WriteLine(enclosure);
-
-Console.WriteLine(
-    $"Чи можна розмістити 2 тварини: " +
-    $"{enclosure.CanAccommodate(2)}"
-);
-
-
-// SAVE
-Console.WriteLine("\n--- SAVE ---");
-
-const string filePath = "mammals.json";
-
-mammalService.Save(filePath);
-
-
-// LOAD
-Console.WriteLine("\n--- LOAD ---");
-
-var loadedService = new CrudService<Mammal>();
-
-loadedService.OperationPerformed += OnOperationPerformed;
-
-loadedService.Load(filePath);
-
-Console.WriteLine("Завантажені дані:");
-
-foreach (var animal in loadedService.ReadAll())
-{
-    Console.WriteLine(animal);
-}
-
-
-// REMOVE
-Console.WriteLine("\n--- REMOVE ---");
-
-mammalService.Remove(tiger);
-
-Console.WriteLine(
-    $"Кількість записів після видалення: " +
-    $"{mammalService.ReadAll().Count()}"
-);
-
-
-Console.WriteLine();
 Console.WriteLine("==============================================");
-Console.WriteLine("        Виконання лабораторної завершено");
-Console.WriteLine("==============================================");
+
 static void OnOperationPerformed(string message)
 {
     Console.WriteLine($"[LOG] {message}");
-}
-
-static void OnAnimalStatusChanged(string message)
-{
-    Console.WriteLine($"[EVENT] {message}");
 }
