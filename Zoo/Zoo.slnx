@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Zoo.Common/Zoo.Common.csproj" />
+  <Project Path="Zoo.Console/Zoo.Console.csproj" />
+</Solution>
