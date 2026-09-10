@@ -4,132 +4,76 @@ using System.Collections;
 namespace Zoo.Common;
 
 public class CrudServiceAsync<T> : ICrudServiceAsync<T>
-    where T : Animal
+    where T : class, IEntity
 {
-    private readonly List<T> _items = new();
-    private readonly object _sync = new(); // об'єкт lock для потокобезпечності
-    private readonly SemaphoreSlim _saveSemaphore = new(1, 1); // семафор для асинхронного збереження
+    private readonly IRepository<T> _repository;
 
     public string FilePath { get; set; } = "data_async.json";
 
     public event ZooNotificationHandler? OperationPerformed;
 
+    // Конструктор приймає репозиторій для доступу до БД
+    public CrudServiceAsync(IRepository<T> repository)
+    {
+        _repository = repository;
+    }
+
     public async Task<bool> CreateAsync(T element)
     {
-        lock (_sync)
-        {
-            _items.Add(element);
-        }
+        await _repository.AddAsync(element);
+        await _repository.SaveAsync();
 
-        OperationPerformed?.Invoke($"CREATE: added {element.Name} (ID: {element.Id})");
-        await Task.CompletedTask;
+        OperationPerformed?.Invoke($"CREATE: додано {element.Name} (ID: {element.Id})");
         return true;
     }
 
     public async Task<T?> ReadAsync(Guid id)
     {
-        T? item;
-        lock (_sync)
-        {
-            item = _items.FirstOrDefault(x => x.Id == id);
-        }
-
-        await Task.CompletedTask;
-        return item;
+        return await _repository.GetByIdAsync(id);
     }
 
     public async Task<IEnumerable<T>> ReadAllAsync()
     {
-        List<T> snapshot;
-        lock (_sync)
-        {
-            snapshot = new List<T>(_items);
-        }
-
-        return await Task.FromResult<IEnumerable<T>>(snapshot);
+        return await _repository.GetAllAsync();
     }
 
     public async Task<IEnumerable<T>> ReadAllAsync(int page, int amount)
     {
+        var all = (await _repository.GetAllAsync()).ToList();
         if (page < 1) page = 1;
         if (amount < 1) amount = 10;
-
-        List<T> snapshot;
-        lock (_sync)
-        {
-            snapshot = new List<T>(_items);
-        }
-
-        var result = snapshot.Skip((page - 1) * amount).Take(amount).ToList();
-        return await Task.FromResult<IEnumerable<T>>(result);
+        return all.Skip((page - 1) * amount).Take(amount).ToList();
     }
 
     public async Task<bool> UpdateAsync(T element)
     {
-        lock (_sync)
-        {
-            var idx = _items.FindIndex(x => x.Id == element.Id);
-            if (idx == -1) return false;
-            _items[idx] = element;
-        }
-
-        OperationPerformed?.Invoke($"UPDATE: updated {element.Name} (ID: {element.Id})");
-        await Task.CompletedTask;
+        await _repository.UpdateAsync(element);
+        await _repository.SaveAsync();
+        OperationPerformed?.Invoke($"UPDATE: оновлено {element.Name} (ID: {element.Id})");
         return true;
     }
 
     public async Task<bool> RemoveAsync(T element)
     {
-        bool removed = false;
-        lock (_sync)
-        {
-            removed = _items.RemoveAll(x => x.Id == element.Id) > 0;
-        }
-
-        if (removed)
-        {
-            OperationPerformed?.Invoke($"REMOVE: removed {element.Name} (ID: {element.Id})");
-        }
-
-        await Task.CompletedTask;
-        return removed;
+        await _repository.DeleteAsync(element);
+        await _repository.SaveAsync();
+        OperationPerformed?.Invoke($"REMOVE: видалено {element.Name} (ID: {element.Id})");
+        return true;
     }
 
     public async Task<bool> SaveAsync()
     {
-        await _saveSemaphore.WaitAsync();
-        try
-        {
-            List<T> snapshot;
-            lock (_sync)
-            {
-                snapshot = new List<T>(_items);
-            }
-
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(snapshot, options);
-            await File.WriteAllTextAsync(FilePath, json);
-
-            OperationPerformed?.Invoke($"SAVE: saved {snapshot.Count} records to '{FilePath}'");
-            return true;
-        }
-        finally
-        {
-            _saveSemaphore.Release();
-        }
+        await _repository.SaveAsync();
+        OperationPerformed?.Invoke($"SAVE: збережено дані через репозиторій");
+        return true;
     }
 
-    // Реалізація IEnumerable<T> — повернути перерахувач знімка
+    // IEnumerable<T> реалізація через отримання всіх елементів (блокуюче на результат)
     public IEnumerator<T> GetEnumerator()
     {
-        List<T> snapshot;
-        lock (_sync)
-        {
-            snapshot = new List<T>(_items);
-        }
-
-        return snapshot.GetEnumerator();
+        var all = _repository.GetAllAsync().GetAwaiter().GetResult().ToList();
+        return all.GetEnumerator();
     }
 
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 }
