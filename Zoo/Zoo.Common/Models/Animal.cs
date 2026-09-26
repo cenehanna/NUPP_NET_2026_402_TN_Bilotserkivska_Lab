@@ -3,7 +3,7 @@
 // Делегат для повідомлень про зміни в системі
 public delegate void ZooNotificationHandler(string message);
 
-public class Animal
+public class Animal : IEntity
 {
     // Статичне поле для підрахунку створених тварин
     private static int _totalAnimalsCount;
