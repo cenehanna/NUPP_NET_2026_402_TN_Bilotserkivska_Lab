@@ -2,7 +2,8 @@
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Concurrent;
-using Zoo.Common;
+using Zoo.Common.Models;
+using Zoo.Common.Services;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 

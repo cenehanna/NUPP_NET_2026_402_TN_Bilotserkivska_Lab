@@ -1,7 +1,10 @@
 using System.Text.Json;
 using System.Collections;
+using Zoo.Common.Models;
 
-namespace Zoo.Common;
+
+
+namespace Zoo.Common.Services;
 
 public class CrudServiceAsync<T> : ICrudServiceAsync<T>
     where T : Animal

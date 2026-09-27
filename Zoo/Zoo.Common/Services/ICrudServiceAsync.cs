@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace Zoo.Common;
+namespace Zoo.Common.Services;
 
 public interface ICrudServiceAsync<T> : IEnumerable<T>
 {
