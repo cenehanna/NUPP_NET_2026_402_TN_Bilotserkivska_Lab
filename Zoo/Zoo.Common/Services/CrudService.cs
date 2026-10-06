@@ -6,7 +6,7 @@ namespace Zoo.Common.Services;
 public class CrudService<T> : ICrudService<T>
     where T : Animal
 {
-    private readonly List<T> _items = new();
+    private readonly Dictionary<Guid, T> _items = new();
 
     // Конструктор
     public CrudService() { }
@@ -14,7 +14,14 @@ public class CrudService<T> : ICrudService<T>
 
     public void Create(T element)
     {
-        _items.Add(element);
+        if (_items.ContainsKey(element.Id))
+        {
+            throw new InvalidOperationException(
+                $"Тварину з ID {element.Id} вже додано."
+            );
+        }
+
+        _items[element.Id] = element;
 
         OperationPerformed?.Invoke(
             $"CREATE: додано тварину \"{element.Name}\" (ID: {element.Id})"
@@ -23,28 +30,25 @@ public class CrudService<T> : ICrudService<T>
 
     public T? Read(Guid id)
     {
-        return _items.FirstOrDefault(item => item.Id == id);
+        _items.TryGetValue(id, out var item);
+        return item;
     }
 
     public IEnumerable<T> ReadAll()
     {
-        return _items;
+        return _items.Values;
     }
 
     public void Update(T element)
     {
-        var existingItem = Read(element.Id);
-
-        if (existingItem == null)
+        if (!_items.ContainsKey(element.Id))
         {
             throw new InvalidOperationException(
                 "Тварину з таким ID не знайдено."
             );
         }
 
-        var index = _items.IndexOf(existingItem);
-
-        _items[index] = element;
+        _items[element.Id] = element;
 
         OperationPerformed?.Invoke(
             $"UPDATE: оновлено тварину \"{element.Name}\" (ID: {element.Id})"
@@ -53,16 +57,12 @@ public class CrudService<T> : ICrudService<T>
 
     public void Remove(T element)
     {
-        var existingItem = Read(element.Id);
-
-        if (existingItem == null)
+        if (!_items.Remove(element.Id))
         {
             throw new InvalidOperationException(
                 "Тварину з таким ID не знайдено."
             );
         }
-
-        _items.Remove(existingItem);
 
         OperationPerformed?.Invoke(
             $"REMOVE: видалено тварину \"{element.Name}\" (ID: {element.Id})"
@@ -76,7 +76,7 @@ public class CrudService<T> : ICrudService<T>
             WriteIndented = true
         };
 
-        var json = JsonSerializer.Serialize(_items, options);
+        var json = JsonSerializer.Serialize(_items.Values.ToList(), options);
 
         File.WriteAllText(filePath, json);
 
@@ -105,7 +105,10 @@ public class CrudService<T> : ICrudService<T>
         }
 
         _items.Clear();
-        _items.AddRange(items);
+        foreach (var item in items)
+        {
+            _items[item.Id] = item;
+        }
 
         OperationPerformed?.Invoke(
             $"LOAD: завантажено {items.Count} записів з файлу \"{filePath}\""
