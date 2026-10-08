@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Collections.Concurrent;
 using Zoo.Common.Models;
 
 namespace Zoo.Common.Services;
@@ -6,7 +7,7 @@ namespace Zoo.Common.Services;
 public class CrudService<T> : ICrudService<T>
     where T : Animal
 {
-    private readonly Dictionary<Guid, T> _items = new();
+    private readonly ConcurrentDictionary<Guid, T> _items = new();
 
     // Конструктор
     public CrudService() { }
@@ -14,14 +15,12 @@ public class CrudService<T> : ICrudService<T>
 
     public void Create(T element)
     {
-        if (_items.ContainsKey(element.Id))
+        if (!_items.TryAdd(element.Id, element))
         {
             throw new InvalidOperationException(
                 $"Тварину з ID {element.Id} вже додано."
             );
         }
-
-        _items[element.Id] = element;
 
         OperationPerformed?.Invoke(
             $"CREATE: додано тварину \"{element.Name}\" (ID: {element.Id})"
@@ -57,7 +56,7 @@ public class CrudService<T> : ICrudService<T>
 
     public void Remove(T element)
     {
-        if (!_items.Remove(element.Id))
+        if (!_items.TryRemove(element.Id, out _))
         {
             throw new InvalidOperationException(
                 "Тварину з таким ID не знайдено."
