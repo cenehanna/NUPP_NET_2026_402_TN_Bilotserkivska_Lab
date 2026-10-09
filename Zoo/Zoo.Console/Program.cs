@@ -11,7 +11,7 @@ Console.WriteLine("==============================================");
 Console.WriteLine("    ДЕМОНСТРАЦІЯ АСИНХРОННОГО CRUD ДЛЯ ЗООПАРКУ");
 Console.WriteLine("==============================================");
 
-// Асинхронний CRUD сервіс (багатопотоково-безпечний)
+// Асинхронний CRUD сервіс 
 var mammalService = new CrudServiceAsync<Mammal>
 {
     FilePath = "mammals_async.json"
@@ -67,7 +67,7 @@ foreach (var mammal in pagedList)
 
 // Демонстрація SemaphoreSlim для обмеження паралельних операцій
 using var sem = new SemaphoreSlim(3);
-var bag = new ConcurrentBag<string>();
+var bag = new ConcurrentBag<string>();//Потокобезпечна колекція
 
 var tasks = all.Take(20).Select(async a =>
 {
@@ -89,11 +89,26 @@ Console.WriteLine($"Зібрано імен: {bag.Count} (SemaphoreSlim).");
 // Демонстрація AutoResetEvent для сигналізації про завершення збереження
 using var autoEvent = new AutoResetEvent(false);
 var saveTask = mammalService.SaveAsync();
-saveTask.ContinueWith(t => autoEvent.Set());
+saveTask.ContinueWith(t =>
+{
+    if (t.IsCompletedSuccessfully && t.Result)
+    {
+        Console.WriteLine("✓ Збереження пройшло успішно.");
+    }
+    else if (t.IsFaulted)
+    {
+        Console.WriteLine($"✗ Помилка при збереженні: {t.Exception?.InnerException?.Message}");
+    }
+    else
+    {
+        Console.WriteLine("✗ Збереження не завершилося успішно.");
+    }
+    autoEvent.Set();
+});
 
 Console.WriteLine("Очікування завершення асинхронного збереження...");
 autoEvent.WaitOne();
-Console.WriteLine("Збереження завершено.");
+Console.WriteLine("Операція завершена.");
 
 Console.WriteLine("==============================================");
 

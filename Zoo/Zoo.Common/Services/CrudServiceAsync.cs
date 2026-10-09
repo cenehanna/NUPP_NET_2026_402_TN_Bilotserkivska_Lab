@@ -41,7 +41,7 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
         return item;
     }
 
-    public async Task<IEnumerable<T>> ReadAllAsync()
+    public Task<IEnumerable<T>> ReadAllAsync()
     {
         List<T> snapshot;
         lock (_sync)
@@ -49,10 +49,10 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
             snapshot = new List<T>(_items);
         }
 
-        return await Task.FromResult<IEnumerable<T>>(snapshot);
+        return Task.FromResult<IEnumerable<T>>(snapshot);
     }
 
-    public async Task<IEnumerable<T>> ReadAllAsync(int page, int amount)
+    public Task<IEnumerable<T>> ReadAllAsync(int page, int amount)
     {
         if (page < 1) page = 1;
         if (amount < 1) amount = 10;
@@ -64,7 +64,7 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
         }
 
         var result = snapshot.Skip((page - 1) * amount).Take(amount).ToList();
-        return await Task.FromResult<IEnumerable<T>>(result);
+        return Task.FromResult<IEnumerable<T>>(result);
     }
 
     public async Task<bool> UpdateAsync(T element)
