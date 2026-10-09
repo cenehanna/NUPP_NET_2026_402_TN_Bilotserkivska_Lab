@@ -1,10 +1,11 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Zoo.Common.Interfaces;
 
 namespace Zoo.Infrastructure.Models
 {
-    public class AnimalDetailModel : Zoo.Common.IEntity
+    public class AnimalDetailModel : IEntity
     {
         [Key]
         [ForeignKey("Animal")]

@@ -4,7 +4,11 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
-using Zoo.Common;
+using Zoo.Common.Interfaces;
+using Zoo.Common.Models;
+using Zoo.Common.Services;
+
+
 using Zoo.Infrastructure;
 using Zoo.Infrastructure.Models;
 using Zoo.Infrastructure.Repositories;

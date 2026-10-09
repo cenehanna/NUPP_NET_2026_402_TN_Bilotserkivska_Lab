@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
+using Zoo.Common.Interfaces;
+using Zoo.Common.Models;
 
-namespace Zoo.Common;
+namespace Zoo.Common.Services;
 
 public class CrudService<T> : ICrudService<T>
     where T : Animal

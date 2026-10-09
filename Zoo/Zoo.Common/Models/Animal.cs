@@ -1,4 +1,6 @@
-﻿namespace Zoo.Common;
+﻿using Zoo.Common.Interfaces;
+
+namespace Zoo.Common.Models;
 
 // Делегат для повідомлень про зміни в системі
 public delegate void ZooNotificationHandler(string message);

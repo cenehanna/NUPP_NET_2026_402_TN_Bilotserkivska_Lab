@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Zoo.Common;
+using Zoo.Common.Interfaces;
 
 namespace Zoo.Infrastructure.Models
 {

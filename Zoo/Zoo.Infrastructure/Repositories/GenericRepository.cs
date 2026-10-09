@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Zoo.Common;
+using Zoo.Common.Interfaces;
 
 namespace Zoo.Infrastructure.Repositories;
 

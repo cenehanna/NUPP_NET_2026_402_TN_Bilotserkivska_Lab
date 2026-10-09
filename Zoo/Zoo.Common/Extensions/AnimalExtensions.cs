@@ -1,4 +1,6 @@
-﻿namespace Zoo.Common;
+﻿using Zoo.Common.Models;
+
+namespace Zoo.Common.Extensions;
 
 public static class AnimalExtensions
 {

@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Zoo.Common.Interfaces;
 
 namespace Zoo.Infrastructure.Models
 {
-    public class EnclosureModel : Zoo.Common.IEntity
+    public class EnclosureModel : IEntity
     {
         public Guid Id { get; set; }
         public string? Name { get; set; }
