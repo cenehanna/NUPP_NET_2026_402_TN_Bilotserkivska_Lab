@@ -12,8 +12,8 @@ using Zoo.Infrastructure;
 namespace Zoo.Infrastructure.Migrations
 {
     [DbContext(typeof(ZooContext))]
-    [Migration("20260910140909_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20261009210210_Lab3_Initial")]
+    partial class Lab3_Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,17 +25,32 @@ namespace Zoo.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("AnimalModelKeeperModel", b =>
+                {
+                    b.Property<Guid>("AnimalsId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("KeepersId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("AnimalsId", "KeepersId");
+
+                    b.HasIndex("KeepersId");
+
+                    b.ToTable("AnimalKeeper", (string)null);
+                });
+
             modelBuilder.Entity("Zoo.Infrastructure.Models.AnimalDetailModel", b =>
                 {
-                    b.Property<Guid>("AnimalId")
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("MedicalNotes")
                         .HasColumnType("text");
 
-                    b.HasKey("AnimalId");
+                    b.HasKey("Id");
 
-                    b.ToTable("AnimalDetails");
+                    b.ToTable("AnimalDetails", (string)null);
                 });
 
             modelBuilder.Entity("Zoo.Infrastructure.Models.AnimalModel", b =>
@@ -85,6 +100,20 @@ namespace Zoo.Infrastructure.Migrations
                     b.ToTable("Enclosures");
                 });
 
+            modelBuilder.Entity("Zoo.Infrastructure.Models.KeeperModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Keepers");
+                });
+
             modelBuilder.Entity("Zoo.Infrastructure.Models.BirdModel", b =>
                 {
                     b.HasBaseType("Zoo.Infrastructure.Models.AnimalModel");
@@ -117,11 +146,26 @@ namespace Zoo.Infrastructure.Migrations
                     b.ToTable("Mammals", (string)null);
                 });
 
+            modelBuilder.Entity("AnimalModelKeeperModel", b =>
+                {
+                    b.HasOne("Zoo.Infrastructure.Models.AnimalModel", null)
+                        .WithMany()
+                        .HasForeignKey("AnimalsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Zoo.Infrastructure.Models.KeeperModel", null)
+                        .WithMany()
+                        .HasForeignKey("KeepersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Zoo.Infrastructure.Models.AnimalDetailModel", b =>
                 {
                     b.HasOne("Zoo.Infrastructure.Models.AnimalModel", "Animal")
                         .WithOne("Detail")
-                        .HasForeignKey("Zoo.Infrastructure.Models.AnimalDetailModel", "AnimalId")
+                        .HasForeignKey("Zoo.Infrastructure.Models.AnimalDetailModel", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

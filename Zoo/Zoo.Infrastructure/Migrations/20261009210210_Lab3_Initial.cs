@@ -1,13 +1,12 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 #nullable disable
 
 namespace Zoo.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Lab3_Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -24,6 +23,18 @@ namespace Zoo.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Enclosures", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Keepers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Keepers", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -51,16 +62,40 @@ namespace Zoo.Infrastructure.Migrations
                 name: "AnimalDetails",
                 columns: table => new
                 {
-                    AnimalId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     MedicalNotes = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AnimalDetails", x => x.AnimalId);
+                    table.PrimaryKey("PK_AnimalDetails", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AnimalDetails_Animals_AnimalId",
-                        column: x => x.AnimalId,
+                        name: "FK_AnimalDetails_Animals_Id",
+                        column: x => x.Id,
                         principalTable: "Animals",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AnimalKeeper",
+                columns: table => new
+                {
+                    AnimalsId = table.Column<Guid>(type: "uuid", nullable: false),
+                    KeepersId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnimalKeeper", x => new { x.AnimalsId, x.KeepersId });
+                    table.ForeignKey(
+                        name: "FK_AnimalKeeper_Animals_AnimalsId",
+                        column: x => x.AnimalsId,
+                        principalTable: "Animals",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AnimalKeeper_Keepers_KeepersId",
+                        column: x => x.KeepersId,
+                        principalTable: "Keepers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -106,6 +141,11 @@ namespace Zoo.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AnimalKeeper_KeepersId",
+                table: "AnimalKeeper",
+                column: "KeepersId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Animals_EnclosureId",
                 table: "Animals",
                 column: "EnclosureId");
@@ -118,10 +158,16 @@ namespace Zoo.Infrastructure.Migrations
                 name: "AnimalDetails");
 
             migrationBuilder.DropTable(
+                name: "AnimalKeeper");
+
+            migrationBuilder.DropTable(
                 name: "Birds");
 
             migrationBuilder.DropTable(
                 name: "Mammals");
+
+            migrationBuilder.DropTable(
+                name: "Keepers");
 
             migrationBuilder.DropTable(
                 name: "Animals");

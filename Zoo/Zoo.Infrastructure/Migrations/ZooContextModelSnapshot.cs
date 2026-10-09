@@ -34,24 +34,20 @@ namespace Zoo.Infrastructure.Migrations
 
                     b.HasIndex("KeepersId");
 
-                    b.ToTable("AnimalModelKeeperModel");
+                    b.ToTable("AnimalKeeper", (string)null);
                 });
 
             modelBuilder.Entity("Zoo.Infrastructure.Models.AnimalDetailModel", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("AnimalId");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("MedicalNotes")
                         .HasColumnType("text");
 
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
-                    b.ToTable("AnimalDetails");
+                    b.ToTable("AnimalDetails", (string)null);
                 });
 
             modelBuilder.Entity("Zoo.Infrastructure.Models.AnimalModel", b =>

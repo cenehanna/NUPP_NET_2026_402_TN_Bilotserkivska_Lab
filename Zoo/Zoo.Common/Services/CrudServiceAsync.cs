@@ -1,7 +1,7 @@
-using System.Text.Json;
 using System.Collections;
-using Zoo.Common.Models;
+using System.Linq.Expressions;
 using Zoo.Common.Interfaces;
+using Zoo.Common.Models;
 
 namespace Zoo.Common.Services;
 
@@ -10,11 +10,8 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
 {
     private readonly IRepository<T> _repository;
 
-    public string FilePath { get; set; } = "data_async.json";
-
     public event ZooNotificationHandler? OperationPerformed;
 
-    // Конструктор приймає репозиторій для доступу до БД
     public CrudServiceAsync(IRepository<T> repository)
     {
         _repository = repository;
@@ -24,20 +21,19 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
     {
         await _repository.AddAsync(element);
         await _repository.SaveAsync();
-
-        OperationPerformed?.Invoke($"CREATE: додано {element.Name} (ID: {element.Id})");
+        OperationPerformed?.Invoke($"CREATE: додано елемент (ID: {element.Id})");
         return true;
     }
 
     public async Task<T?> ReadAsync(Guid id)
-    {
-        return await _repository.GetByIdAsync(id);
-    }
+        => await _repository.GetByIdAsync(id);
 
     public async Task<IEnumerable<T>> ReadAllAsync()
-    {
-        return await _repository.GetAllAsync();
-    }
+        => await _repository.GetAllAsync();
+
+    // ← ОСЬ ЦЕЙ МЕТОД БУВ ВІДСУТНІЙ
+    public async Task<IEnumerable<T>> ReadAllAsync(params Expression<Func<T, object>>[] includes)
+        => await _repository.GetAllAsync(includes);
 
     public async Task<IEnumerable<T>> ReadAllAsync(int page, int amount)
     {
@@ -51,7 +47,7 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
     {
         await _repository.UpdateAsync(element);
         await _repository.SaveAsync();
-        OperationPerformed?.Invoke($"UPDATE: оновлено {element.Name} (ID: {element.Id})");
+        OperationPerformed?.Invoke($"UPDATE: оновлено елемент (ID: {element.Id})");
         return true;
     }
 
@@ -59,23 +55,19 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
     {
         await _repository.DeleteAsync(element);
         await _repository.SaveAsync();
-        OperationPerformed?.Invoke($"REMOVE: видалено {element.Name} (ID: {element.Id})");
+        OperationPerformed?.Invoke($"REMOVE: видалено елемент (ID: {element.Id})");
         return true;
     }
 
     public async Task<bool> SaveAsync()
     {
         await _repository.SaveAsync();
-        OperationPerformed?.Invoke($"SAVE: збережено дані через репозиторій");
+        OperationPerformed?.Invoke("SAVE: збережено дані через репозиторій");
         return true;
     }
 
-    // IEnumerable<T> реалізація через отримання всіх елементів (блокуюче на результат)
     public IEnumerator<T> GetEnumerator()
-    {
-        var all = _repository.GetAllAsync().GetAwaiter().GetResult().ToList();
-        return all.GetEnumerator();
-    }
+        => _repository.GetAllAsync().GetAwaiter().GetResult().GetEnumerator();
 
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
