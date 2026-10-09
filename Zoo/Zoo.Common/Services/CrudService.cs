@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Collections.Concurrent;
 using Zoo.Common.Models;
+using Zoo.Common.Interfaces;
 
 namespace Zoo.Common.Services;
 

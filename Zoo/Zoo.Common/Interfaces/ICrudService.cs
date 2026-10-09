@@ -1,4 +1,4 @@
-﻿namespace Zoo.Common.Services;
+﻿namespace Zoo.Common.Interfaces;
 
 public interface ICrudService<T>
 {

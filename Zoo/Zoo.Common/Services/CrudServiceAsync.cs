@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Collections;
 using Zoo.Common.Models;
+using Zoo.Common.Interfaces;
 
 
 
@@ -17,19 +18,24 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
 
     public event ZooNotificationHandler? OperationPerformed;
 
-    public async Task<bool> CreateAsync(T element)
+    public Task<bool> CreateAsync(T element)
     {
         lock (_sync)
         {
+            if (_items.Any(x => x.Id == element.Id))
+            {
+                throw new InvalidOperationException(
+                    $"Тварину з ID {element.Id} вже додано."
+                );
+            }
             _items.Add(element);
         }
 
         OperationPerformed?.Invoke($"CREATE: added {element.Name} (ID: {element.Id})");
-        await Task.CompletedTask;
-        return true;
+        return Task.FromResult(true);
     }
 
-    public async Task<T?> ReadAsync(Guid id)
+    public Task<T?> ReadAsync(Guid id)
     {
         T? item;
         lock (_sync)
@@ -37,8 +43,7 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
             item = _items.FirstOrDefault(x => x.Id == id);
         }
 
-        await Task.CompletedTask;
-        return item;
+        return Task.FromResult(item);
     }
 
     public Task<IEnumerable<T>> ReadAllAsync()
@@ -67,21 +72,20 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
         return Task.FromResult<IEnumerable<T>>(result);
     }
 
-    public async Task<bool> UpdateAsync(T element)
+    public Task<bool> UpdateAsync(T element)
     {
         lock (_sync)
         {
             var idx = _items.FindIndex(x => x.Id == element.Id);
-            if (idx == -1) return false;
+            if (idx == -1) return Task.FromResult(false);
             _items[idx] = element;
         }
 
         OperationPerformed?.Invoke($"UPDATE: updated {element.Name} (ID: {element.Id})");
-        await Task.CompletedTask;
-        return true;
+        return Task.FromResult(true);
     }
 
-    public async Task<bool> RemoveAsync(T element)
+    public Task<bool> RemoveAsync(T element)
     {
         bool removed = false;
         lock (_sync)
@@ -94,8 +98,7 @@ public class CrudServiceAsync<T> : ICrudServiceAsync<T>
             OperationPerformed?.Invoke($"REMOVE: removed {element.Name} (ID: {element.Id})");
         }
 
-        await Task.CompletedTask;
-        return removed;
+        return Task.FromResult(removed);
     }
 
     public async Task<bool> SaveAsync()
