@@ -48,4 +48,23 @@ public class Bird : Animal
         return base.ToString() +
                $", розмах крил: {Wingspan} м, колір пір'я: {FeatherColor}";
     }
+
+    // Статичний метод для генерації нового випадкового об'єкту
+    public static Bird CreateNew()
+    {
+        var rnd = Random.Shared;
+        var age = rnd.Next(1, 15);
+        var wingspan = Math.Round(rnd.NextDouble() * 2.5 + 0.2, 2);
+        var names = new[] { "Кеша", "Орлик", "Чижик", "Сова", "Папуга" };
+        var species = new[] { "Папуга", "Орел", "Сова", "Голуб", "Сокол" };
+
+        return new Bird(
+            names[rnd.Next(names.Length)],
+            species[rnd.Next(species.Length)],
+            age,
+            wingspan,
+            true,
+            "Різнокольоровий"
+        );
+    }
 }

@@ -43,4 +43,23 @@ public class Mammal : Animal
         return base.ToString() +
                $", колір шерсті: {FurColor}, раціон: {Diet}, вага: {Weight} кг";
     }
+
+    // Статичний метод для генерації нового випадкового об'єкту
+    public static Mammal CreateNew()
+    {
+        var rnd = Random.Shared;
+        var age = rnd.Next(1, 20);
+        var weight = Math.Round(rnd.NextDouble() * 200 + 20, 1);
+        var names = new[] { "Сімба", "Мурчик", "Ричі", "Лео", "Балу" };
+        var species = new[] { "Лев", "Тигр", "Ведмідь", "Пантера" };
+
+        return new Mammal(
+            names[rnd.Next(names.Length)],
+            species[rnd.Next(species.Length)],
+            age,
+            "Різний",
+            "М'ясоїдний",
+            weight
+        );
+    }
 }

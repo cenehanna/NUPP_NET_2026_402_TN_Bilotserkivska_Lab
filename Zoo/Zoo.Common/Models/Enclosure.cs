@@ -39,4 +39,15 @@ public class Enclosure
     {
         return $"Вольєр: {Name}, площа: {Area} м², місткість: {Capacity}";
     }
+
+    // Статичний метод для генерації нового випадкового вольєру
+    public static Enclosure CreateNew()
+    {
+        var rnd = Random.Shared;
+        var area = Math.Round(rnd.NextDouble() * 200 + 20, 1);
+        var capacity = rnd.Next(1, 10);
+        var names = new[] { "Вольєр А", "Вольєр Б", "Вольєр В", "Вольєр Г" };
+
+        return new Enclosure(names[rnd.Next(names.Length)], area, capacity);
+    }
 }
