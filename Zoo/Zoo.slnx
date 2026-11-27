@@ -2,4 +2,5 @@
   <Project Path="Zoo.Common/Zoo.Common.csproj" />
   <Project Path="Zoo.Console/Zoo.Console.csproj" />
   <Project Path="Zoo.Infrastructure/Zoo.Infrastructure.csproj" />
+  <Project Path="Zoo.REST/Zoo.REST.csproj" />
 </Solution>
